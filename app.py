@@ -1,42 +1,37 @@
+import csv
+from collections import Counter, defaultdict
+from datetime import datetime
 import streamlit as st
-import pandas as pd
-import plotly.express as px
 
-# Load data
-df = pd.read_csv("Touchpoint - Sheet1.csv")
+# Load CSV data
+data = []
+with open("Touchpoint - Sheet1.csv", newline='', encoding='utf-8') as csvfile:
+    reader = csv.DictReader(csvfile)
+    for row in reader:
+        data.append(row)
 
-# Parse submission dates
-df["Date Submitted"] = pd.to_datetime(df["Date Submitted"], format="%d/%m/%Y", errors="coerce")
+# Parse submission dates and filter valid turnaround times
+submission_dates = []
+contract_types = []
+turnaround_times_by_contract = defaultdict(list)
 
-# Filter rows with valid turnaround time
-df_turnaround = df.dropna(subset=["Turnaround Time (Days)", "Contract Type"])
+for row in data:
+    # Parse date submitted
+    date_str = row.get("Date Submitted", "")
+    try:
+        date = datetime.strptime(date_str, "%d/%m/%Y")
+        submission_dates.append(date)
+    except:
+        pass
 
-# Prepare data for most common contract types
-common_contracts = df["Contract Type"].value_counts().reset_index()
-common_contracts.columns = ["Contract Type", "Count"]
+    # Collect contract types
+    contract_type = row.get("Contract Type", "").strip()
+    if contract_type:
+        contract_types.append(contract_type)
 
-# Prepare data for submissions over time
-submissions_by_date = df["Date Submitted"].value_counts().sort_index().reset_index()
-submissions_by_date.columns = ["Date", "Count"]
-
-# Prepare average turnaround time by contract type
-avg_turnaround = df_turnaround.groupby("Contract Type")["Turnaround Time (Days)"].mean().reset_index()
-
-# Streamlit layout
-st.title("Legal Intake Data Dashboard")
-st.markdown("This dashboard displays summary visualizations based on data exported from Airtable.")
-
-# Chart 1: Most common contract types
-st.subheader("Most Common Contract Types")
-fig1 = px.bar(common_contracts, x="Contract Type", y="Count", color="Contract Type", text="Count")
-st.plotly_chart(fig1, use_container_width=True)
-
-# Chart 2: Requests submitted over time
-st.subheader("Requests Submitted Over Time")
-fig2 = px.line(submissions_by_date, x="Date", y="Count", markers=True)
-st.plotly_chart(fig2, use_container_width=True)
-
-# Chart 3: Average turnaround time by contract type
-st.subheader("Average Turnaround Time by Contract Type")
-fig3 = px.bar(avg_turnaround, x="Contract Type", y="Turnaround Time (Days)", color="Contract Type", text_auto=True)
-st.plotly_chart(fig3, use_container_width=True)
+    # Collect turnaround times by contract type
+    turnaround_str = row.get("Turnaround Time (Days)", "").strip()
+    if turnaround_str and contract_type:
+        try:
+            turnaround = float(turnaround_str)
+            turnaround_times_by_contract[contrac]()_
