@@ -60,7 +60,7 @@ avg_turnaround = {
 }
 
 # Streamlit UI
-st.title("Legal Intake Data Dashboard (No pandas)")
+st.title("Legal Intake Data Dashboard")
 
 st.subheader("Most Common Contract Types")
 st.bar_chart(contract_counts)
