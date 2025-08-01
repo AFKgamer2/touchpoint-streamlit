@@ -1,0 +1,29 @@
+Request ID,Request Name,Requester,Contract Type,Priority,Status,Assigned Counsel,Description of Request,Phone Number,Requester Email,Date Submitted,Contract Document,Target Completion Date,Actual Completion Date,Turnaround Time (Days),Resolution Notes
+Request ID,Sales Contract: Example,Jane Doe (Marketing),Sales Contract,High,Submitted,Team A,N/A,(000) 000-0000,janedoe@example.com,17/07/2025,,24/07/2025,25/07/2025,8.00,
+Request ID,HR Document: Internal,Justin Chelliah (HR),HR Document,High,Submitted,Team B,"Request to draft internal HR document with company policies and procedures tailored to employee conduct, compliance, and workplace standards.
+
+
+
+
+
+
+
+
+",(404) 660-2345,justinchelliah100@gmail.com,17/07/2025,,21/07/2025,22/07/2025,5.00,NDA approved with influencer-specific protections. Sent to marketing for final sign-off.
+Request ID,NDA: Influencer,Jameson Brave (Sales),NDA,High,In Review,Team A,Request to draft NDA for upcoming influencer partnership with confidentiality and non-disclosure clauses tailored to campaign.,(555) 888-1212,JTBrave23006@marmioncadets.org,17/07/2025,,22/07/2025,21/07/2025,4.00,Influencer requested a clause removal. Legal is redlining changes before final approval.
+Request ID,Employment Contract: TikTok,Ariana Steele(Marketing),Employment Contract,High,Submitted,Team A,"Request to draft employment contract for TikTok content creator role with terms tailored to platform-specific deliverables, compensation, ownership rights, and termination conditions.",(555) 111-2222,ariana@brandhub.com,16/07/2025,,24/07/2025,25/07/2025,9.00,NDA was updated with new confidentiality clause. Final version emailed to Ariana.
+Request ID,Vendor Contract: Luxe Events,Kai Ngyuen(HR),Vendor Contract,Medium,In Review,Team C,Request to review and revise vendor contract for Q3 recruitment agency partnership.,(555) 333-4444,kai@company.io,16/07/2025,,23/07/2025,24/07/2025,8.00,Clause 12.1 adjusted for compliance. Sent back to HR for final sign-off.
+Request ID,Host Contract: Charity Gala,Zayn Malik(PR),Contractor Agreement,High,Submitted,Team A,Finalize and review hosting contract for celebrity gala fundraiser. Zayn wants softer lighting clause added.,(555) 999-1919,zayn.m@celebritypr.co,17/07/2025,,22/07/2025,,,Pending internal legal review. Client has requested expedited processing.
+Request ID,Vendor Agreement Review - Software,John Smith (HR),Vendor Agreement,High,Under Review (Intake),Team A,Review terms for new enterprise software vendor agreement.,(555) 123-4567,john.s@example.com,20/07/2025,,,,,
+Request ID,HR Policy Update - Remote Work,Jane Doe (Marketing),HR Document,Medium,In Progress (Legal Review),Team B,Update HR policies to reflect new remote work guidelines.,(555) 987-6543,jane.d@example.com,18/07/2025,,,,,
+Request ID,Sales Contract Draft - New Client,Jameson Brave (Sales),Sales Contract,High,Triaged/Routed,Team C,Draft sales contract for new major client acquisition.,(555) 234-7890,brave.j@example.com,22/07/2025,,,,,
+Request ID,Employment Contract Review,Ariana Steele(Marketing),Employment Contract,High,Awaiting Requester Input,Team A,Review legal implications of a new employment contract.,(555) 876-5432,a.s@example.com,17/07/2025,,,,,
+Request ID,Master Service Agreement Review,Steve Robinson,Master Service Agreement (MSA),Medium,In Progress (Legal Review),Team C,Audit current MSA for compliance and updates.,(555) 345-6789,Kai@example.com,15/07/2025,,,,,
+Request ID,Vendor Contract Negotiation - IT,Zayn Malik(PR),Vendor Agreement,High,In Review,Team C,Negotiate terms for new IT service vendor contract.,(555) 765-4321,zayn@example.com,21/07/2025,,,,,
+Request ID,Contractor Agreement for Project X,Carly Morgan,Contractor Agreement,Medium,In Progress (Legal Review),Team A,Draft contractor agreement for upcoming project X.,(555) 456-7890,justin@example.com,16/07/2025,,,,,
+Request ID,NDA for Confidential Project,Henry Worthington,NDA,High,Cancelled,Team B,Draft NDA for highly confidential internal project.,(555) 678-9012,H.worth@example.com,10/07/2025,,,,,
+Request ID,Other - Regulatory Advisory,Tom Marshall,Other,Medium,Awaiting External Party,Team C,Advise on new environmental regulatory frameworks.,(555) 012-3456,Tom@example.com,14/07/2025,,,,,
+Request ID,Vendor Agreement Termination,Steve Robinson,Vendor Agreement,Low,Completed,Team A,Draft termination notice for a vendor agreement.,(555) 445-5667,steve.r@example.com,16/07/2025,,,,,
+Request ID,Sales Contract Amendment,Parker Collins,Sales Contract,High,Awaiting Requester Input,Team B,Draft amendment to existing sales contract.,(555) 902-7820,parker.c@example.com,17/07/2025,,,,,
+Request ID,Employment Contract - Senior Hire,Carly Morgan,Employment Contract,Medium,In Progress (Legal Review),Team B,Prepare employment contract for a new senior executive hire.,(555) 602-3024,carly@example.com,09/07/2025,,,,,
+Request ID,Master Service Agreement Drafting,Vivian Rowe,Master Service Agreement (MSA),Medium,Under Review (Intake),Team A,Draft new MSA for a long-term service provider.,(555) 642-5087,vivian.r@example.com,16/07/2025,,,,,
