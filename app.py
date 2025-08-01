@@ -30,8 +30,9 @@ for row in data:
         contract_types.append(contract_type)
 
     # Collect turnaround times by contract type
-    turnaround_str = row.get("Turnaround Time (Days)", "").strip()
     if turnaround_str and contract_type:
         try:
             turnaround = float(turnaround_str)
-            turnaround_times_by_contract[contrac]()_
+            turnaround_times_by_contract[contract_type].append(turnaround)
+        except:
+            pass
