@@ -1,4 +1,4 @@
-# app.py - Complete Version with Styled Heatmap
+# app.py - Complete Version with Transparent Heatmap
 import csv
 from collections import Counter, defaultdict
 from datetime import datetime, date
@@ -136,38 +136,39 @@ def calendar_heatmap(rows, title="Request Volume"):
         day_of_week = d.weekday()  # Monday=0
         heatmap[day_of_week, week_num] = cnt
     
-    # Create plot with Streamlit style
+    # Create plot with transparent background
     fig, ax = plt.subplots(figsize=(max(8, num_weeks*0.6), 2.2))
+    fig.patch.set_alpha(0)  # Transparent figure background
     plt.style.use('default')
     
-    # Blue gradient matching Streamlit theme
+    # Blue gradient with transparent for zeros
     cmap = plt.cm.Blues
-    cmap.set_bad(color='#f0f2f6')  # Light gray for empty
+    cmap.set_under(color=(0,0,0,0))  # Fully transparent for 0 values
     
     # Plot with clean styling
     c = ax.imshow(heatmap, cmap=cmap, aspect='auto', 
-                 interpolation='none', vmin=0, vmax=max(1, max(counts.values())))
+                 interpolation='none', vmin=0.1)  # 0.1 threshold for visibility
     
     # Customize appearance
+    ax.set_facecolor((0,0,0,0))  # Transparent axes background
     ax.set_xticks([])
     ax.set_yticks(range(7))
     ax.set_yticklabels(["Mon", "Tue", "Wed", "Thu", "Fri", "Sat", "Sun"])
-    ax.tick_params(axis='y', colors='#31333F', labelsize=9)  # Dark gray text
+    ax.tick_params(axis='y', colors='#31333F', labelsize=9)
     
-    # Remove spines and add subtle grid
+    # Remove all borders and spines
     for spine in ax.spines.values():
         spine.set_visible(False)
-    ax.grid(which='both', color='white', linestyle='-', linewidth=0.8)
-    ax.set_axisbelow(True)
     
-    # Add minimal colorbar
+    # Add minimal colorbar with transparent background
     cbar = fig.colorbar(c, ax=ax, orientation='horizontal', pad=0.08)
     cbar.outline.set_visible(False)
     cbar.ax.tick_params(colors='#31333F', labelsize=8)
     cbar.set_label('Requests', color='#31333F', fontsize=9)
+    cbar.ax.set_facecolor((0,0,0,0))  # Transparent colorbar background
     
     plt.tight_layout()
-    st.pyplot(fig)
+    st.pyplot(fig, transparent=True)
 
 # ----------------------------
 # App
