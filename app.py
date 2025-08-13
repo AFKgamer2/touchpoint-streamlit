@@ -1,4 +1,4 @@
-# app.py - Complete Working Version
+# app.py - Complete Working Version with Fixed Priority Matrix
 import csv
 from collections import Counter, defaultdict
 from datetime import datetime, date, timedelta
@@ -122,7 +122,6 @@ def calendar_heatmap(rows, title="Request Volume"):
         st.info("No data for heatmap.")
         return
 
-    # Custom light blue colormap
     colors = [(0.9, 0.95, 1), (0.6, 0.8, 1), (0.3, 0.6, 1), (0.1, 0.4, 0.8)]
     cmap = LinearSegmentedColormap.from_list("custom_blue", colors)
     cmap.set_under(color=(0.95, 0.97, 1, 0.5))
@@ -164,52 +163,72 @@ def calendar_heatmap(rows, title="Request Volume"):
     st.pyplot(fig, transparent=True)
 
 # ----------------------------
-# New Features
+# New Features (with fixed Priority Matrix)
 # ----------------------------
 def show_priority_matrix(rows):
-    """Priority Matrix visualization"""
+    """Fixed Priority Matrix visualization"""
     if not rows:
+        st.warning("No data available for priority matrix")
         return
     
     st.subheader("Priority Matrix")
     
-    high_urgent = []
-    high_not_urgent = []
-    low_urgent = []
-    low_not_urgent = []
+    categories = {
+        "high_urgent": 0,
+        "high_not_urgent": 0,
+        "low_urgent": 0,
+        "low_not_urgent": 0
+    }
     
     for r in rows:
-        priority = r.get("Priority", "").lower()
-        turnaround = r.get("Turnaround Float", float('inf'))
-        
-        if priority in ["high", "urgent"]:
-            if turnaround <= 7:
-                high_urgent.append(r)
+        try:
+            priority = str(r.get("Priority", "")).lower()
+            turnaround = float(r["Turnaround Float"]) if r.get("Turnaround Float") else None
+            
+            if turnaround is None:
+                continue
+                
+            if priority in ["high", "urgent"]:
+                key = "high_urgent" if turnaround <= 7 else "high_not_urgent"
             else:
-                high_not_urgent.append(r)
-        else:
-            if turnaround <= 7:
-                low_urgent.append(r)
-            else:
-                low_not_urgent.append(r)
+                key = "low_urgent" if turnaround <= 7 else "low_not_urgent"
+                
+            categories[key] += 1
+        except (ValueError, TypeError):
+            continue
     
+    # Prepare matrix data
+    matrix_data = [
+        [categories["high_urgent"], categories["high_not_urgent"]],
+        [categories["low_urgent"], categories["low_not_urgent"]]
+    ]
+    
+    if sum(sum(row) for row in matrix_data) == 0:
+        st.warning("No valid priority/turnaround data available")
+        return
+    
+    # Create visualization
     fig, ax = plt.subplots(figsize=(6, 6))
-    c = ax.imshow([[len(high_urgent), len(high_not_urgent)], 
-                  [len(low_urgent), len(low_not_urgent)]], 
-                 cmap="YlOrRd")
+    c = ax.imshow(matrix_data, cmap="YlOrRd")
     
+    # Add text labels
     for i in range(2):
         for j in range(2):
-            ax.text(j, i, [len(high_urgent), len(high_not_urgent), 
-                          len(low_urgent), len(low_not_urgent)][i*2+j],
-                    ha="center", va="center", color="black", fontsize=14)
+            ax.text(j, i, matrix_data[i][j],
+                    ha="center", va="center", 
+                    color="black", fontsize=14, fontweight='bold')
     
+    # Configure axes
     ax.set_xticks([0, 1])
-    ax.set_xticklabels(["High Priority", "Low Priority"])
     ax.set_yticks([0, 1])
-    ax.set_yticklabels(["Urgent", "Not Urgent"])
-    ax.set_title("Work Priority Matrix", pad=20)
-    plt.colorbar(c, ax=ax, label="Number of Requests")
+    ax.set_xticklabels(["High Priority", "Low Priority"])
+    ax.set_yticklabels(["Urgent (≤7 days)", "Not Urgent (>7 days)"])
+    ax.set_title("Work Priority Matrix", pad=20, fontweight='bold')
+    
+    # Add colorbar
+    cbar = fig.colorbar(c, ax=ax, orientation='horizontal', pad=0.1)
+    cbar.set_label('Number of Requests', fontweight='bold')
+    
     st.pyplot(fig)
 
 def show_document_complexity(rows):
@@ -222,19 +241,28 @@ def show_document_complexity(rows):
     doc_metrics = defaultdict(lambda: {"count": 0, "turnarounds": []})
     for r in rows:
         doc_type = r.get("Contract Type", "Other")
-        if r["Turnaround Float"]:
-            doc_metrics[doc_type]["count"] += 1
-            doc_metrics[doc_type]["turnarounds"].append(r["Turnaround Float"])
+        if r["Turnaround Float"] is not None:
+            try:
+                turnaround = float(r["Turnaround Float"])
+                doc_metrics[doc_type]["count"] += 1
+                doc_metrics[doc_type]["turnarounds"].append(turnaround)
+            except (ValueError, TypeError):
+                continue
     
     analysis_data = []
     for doc_type, metrics in doc_metrics.items():
-        avg_time = sum(metrics["turnarounds"]) / len(metrics["turnarounds"]) if metrics["turnarounds"] else 0
-        analysis_data.append({
-            "Document Type": doc_type,
-            "Count": metrics["count"],
-            "Avg Turnaround": avg_time,
-            "Complexity": "High" if avg_time > 7 else "Medium" if avg_time > 3 else "Low"
-        })
+        if metrics["turnarounds"]:
+            avg_time = sum(metrics["turnarounds"]) / len(metrics["turnarounds"])
+            analysis_data.append({
+                "Document Type": doc_type,
+                "Count": metrics["count"],
+                "Avg Turnaround": avg_time,
+                "Complexity": "High" if avg_time > 7 else "Medium" if avg_time > 3 else "Low"
+            })
+    
+    if not analysis_data:
+        st.warning("No valid document complexity data available")
+        return
     
     analysis_data.sort(key=lambda x: x["Avg Turnaround"], reverse=True)
     
