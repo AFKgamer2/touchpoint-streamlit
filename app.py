@@ -1,4 +1,4 @@
-# app.py - Complete Enhanced Version
+# app.py - Complete Working Version
 import csv
 from collections import Counter, defaultdict
 from datetime import datetime, date, timedelta
@@ -10,26 +10,169 @@ from matplotlib.colors import LinearSegmentedColormap
 CSV_PATH = "Touchpoint - Sheet1.csv"
 
 # ----------------------------
-# Utilities (unchanged)
+# Utilities
 # ----------------------------
-[... previous utility functions remain exactly the same ...]
+def parse_date(s):
+    if not s or not isinstance(s, str):
+        return None
+    s = s.strip()
+    for fmt in ("%d/%m/%Y", "%Y-%m-%d", "%m/%d/%Y"):
+        try:
+            return datetime.strptime(s, fmt).date()
+        except ValueError:
+            continue
+    return None
+
+def to_float(s):
+    if s is None:
+        return None
+    try:
+        return float(s)
+    except (TypeError, ValueError):
+        return None
+
+def load_rows(csv_path):
+    with open(csv_path, newline="", encoding="utf-8") as f:
+        reader = csv.DictReader(f)
+        rows = []
+        for r in reader:
+            r = dict(r)
+            r["Date Submitted Parsed"] = parse_date(r.get("Date Submitted", ""))
+            r["Turnaround Float"] = to_float(r.get("Turnaround Time (Days)"))
+            rows.append(r)
+    return rows
+
+def unique_values(rows, key):
+    vals = sorted({(r.get(key) or "").strip() for r in rows if (r.get(key) or "").strip()})
+    return vals
+
+def filter_rows(rows, filters, date_range):
+    start, end = date_range
+    out = []
+    for r in rows:
+        ds = r.get("Date Submitted Parsed")
+        if ds is None or ds < start or ds > end:
+            continue
+        keep = True
+        for k, allowed in filters.items():
+            if allowed:
+                v = (r.get(k) or "").strip()
+                if v not in allowed:
+                    keep = False
+                    break
+        if keep:
+            out.append(r)
+    return out
 
 # ----------------------------
-# Enhanced Charts
+# KPIs
 # ----------------------------
-[... previous chart functions including the improved calendar_heatmap ...]
+def kpi_values(rows):
+    total = len(rows)
+    completed = [r for r in rows if (r.get("Status") or "").strip().lower() in {"completed", "done", "closed"}]
+    on_time = sum(1 for r in completed if r["Turnaround Float"] is not None and r["Turnaround Float"] <= 7)
+    on_time_pct = (on_time / len(completed) * 100.0) if completed else 0.0
+    turnaround_vals = [r["Turnaround Float"] for r in rows if r["Turnaround Float"] is not None]
+    avg_turnaround = sum(turnaround_vals) / len(turnaround_vals) if turnaround_vals else 0.0
+    counts = Counter([(r.get("Contract Type") or "").strip() for r in rows if (r.get("Contract Type") or "").strip()])
+    most_common_ct = counts.most_common(1)[0][0] if counts else "—"
+    return total, avg_turnaround, on_time_pct, most_common_ct
 
 # ----------------------------
-# New Analytical Features
+# Charts
+# ----------------------------
+def bar_chart_from_counter(counter_dict, title):
+    st.subheader(title)
+    if counter_dict:
+        chart_data = {"Category": list(counter_dict.keys()), 
+                     "Count": list(counter_dict.values())}
+        st.bar_chart(chart_data, x="Category", y="Count")
+    else:
+        st.info("No data to display.")
+
+def line_chart_counts(dates_list, title):
+    st.subheader(title)
+    if dates_list:
+        date_counts = Counter(dates_list)
+        chart_data = {"Date": [d.isoformat() for d in sorted(date_counts)],
+                     "Count": [date_counts[d] for d in sorted(date_counts)]}
+        st.line_chart(chart_data, x="Date", y="Count")
+    else:
+        st.info("No data to display.")
+
+def histogram_turnaround(values, title):
+    st.subheader(title)
+    if values:
+        bins = [0, 3, 7, 14, 30]
+        hist = [0] * (len(bins)-1)
+        for v in values:
+            for i in range(len(bins)-1):
+                if bins[i] <= v < bins[i+1]:
+                    hist[i] += 1
+        chart_data = {"Range": [f"{bins[i]}-{bins[i+1]} days" for i in range(len(hist))],
+                     "Count": hist}
+        st.bar_chart(chart_data, x="Range", y="Count")
+    else:
+        st.info("No turnaround time data.")
+
+def calendar_heatmap(rows, title="Request Volume"):
+    st.subheader(title)
+    counts = Counter([r["Date Submitted Parsed"] for r in rows if r["Date Submitted Parsed"]])
+    if not counts:
+        st.info("No data for heatmap.")
+        return
+
+    # Custom light blue colormap
+    colors = [(0.9, 0.95, 1), (0.6, 0.8, 1), (0.3, 0.6, 1), (0.1, 0.4, 0.8)]
+    cmap = LinearSegmentedColormap.from_list("custom_blue", colors)
+    cmap.set_under(color=(0.95, 0.97, 1, 0.5))
+
+    dates = sorted(counts.keys())
+    min_date = min(dates)
+    max_date = max(dates)
+    
+    num_weeks = (max_date - min_date).days // 7 + 2
+    heatmap = np.zeros((7, num_weeks))
+    
+    for d, cnt in counts.items():
+        week_num = (d - min_date).days // 7
+        day_of_week = d.weekday()
+        heatmap[day_of_week, week_num] = cnt
+    
+    fig, ax = plt.subplots(figsize=(max(8, num_weeks*0.6), 2.2))
+    fig.patch.set_alpha(0)
+    
+    c = ax.imshow(heatmap, cmap=cmap, aspect='auto', 
+                 interpolation='none', vmin=0.1)
+    
+    ax.set_facecolor((0.95, 0.97, 1, 0.3))
+    ax.set_xticks([])
+    ax.set_yticks(range(7))
+    ax.set_yticklabels(["Mon", "Tue", "Wed", "Thu", "Fri", "Sat", "Sun"], 
+                      color='white', weight='bold')
+    
+    for spine in ax.spines.values():
+        spine.set_visible(False)
+    
+    cbar = fig.colorbar(c, ax=ax, orientation='horizontal', pad=0.08)
+    cbar.outline.set_visible(False)
+    cbar.ax.tick_params(colors='white', labelsize=8)
+    cbar.set_label('Requests', color='white', fontsize=10, weight='bold')
+    cbar.ax.set_facecolor((0.95, 0.97, 1, 0.3))
+    
+    plt.tight_layout()
+    st.pyplot(fig, transparent=True)
+
+# ----------------------------
+# New Features
 # ----------------------------
 def show_priority_matrix(rows):
-    """New Feature: 2x2 Priority Matrix"""
+    """Priority Matrix visualization"""
     if not rows:
         return
     
     st.subheader("Priority Matrix")
     
-    # Categorize requests
     high_urgent = []
     high_not_urgent = []
     low_urgent = []
@@ -50,25 +193,17 @@ def show_priority_matrix(rows):
             else:
                 low_not_urgent.append(r)
     
-    # Create matrix data
-    matrix_data = {
-        "Urgent": [len(high_urgent), len(low_urgent)],
-        "Not Urgent": [len(high_not_urgent), len(low_not_urgent)]
-    }
-    
-    # Visualize with colored matrix
     fig, ax = plt.subplots(figsize=(6, 6))
     c = ax.imshow([[len(high_urgent), len(high_not_urgent)], 
                   [len(low_urgent), len(low_not_urgent)]], 
                  cmap="YlOrRd")
     
-    # Add text annotations
     for i in range(2):
         for j in range(2):
-            ax.text(j, i, matrix_data[["Urgent", "Not Urgent"][j]][i],
+            ax.text(j, i, [len(high_urgent), len(high_not_urgent), 
+                          len(low_urgent), len(low_not_urgent)][i*2+j],
                     ha="center", va="center", color="black", fontsize=14)
     
-    # Customize appearance
     ax.set_xticks([0, 1])
     ax.set_xticklabels(["High Priority", "Low Priority"])
     ax.set_yticks([0, 1])
@@ -78,13 +213,12 @@ def show_priority_matrix(rows):
     st.pyplot(fig)
 
 def show_document_complexity(rows):
-    """New Feature: Document Type Analysis"""
+    """Document complexity analysis"""
     if not rows:
         return
     
     st.subheader("Document Complexity Analysis")
     
-    # Calculate metrics by document type
     doc_metrics = defaultdict(lambda: {"count": 0, "turnarounds": []})
     for r in rows:
         doc_type = r.get("Contract Type", "Other")
@@ -92,7 +226,6 @@ def show_document_complexity(rows):
             doc_metrics[doc_type]["count"] += 1
             doc_metrics[doc_type]["turnarounds"].append(r["Turnaround Float"])
     
-    # Prepare data for display
     analysis_data = []
     for doc_type, metrics in doc_metrics.items():
         avg_time = sum(metrics["turnarounds"]) / len(metrics["turnarounds"]) if metrics["turnarounds"] else 0
@@ -103,10 +236,8 @@ def show_document_complexity(rows):
             "Complexity": "High" if avg_time > 7 else "Medium" if avg_time > 3 else "Low"
         })
     
-    # Sort by complexity
     analysis_data.sort(key=lambda x: x["Avg Turnaround"], reverse=True)
     
-    # Display with colored bars
     st.dataframe(
         analysis_data,
         column_config={
@@ -125,12 +256,54 @@ def show_document_complexity(rows):
     )
 
 # ----------------------------
-# Updated App Layout with All Features
+# App Layout
 # ----------------------------
-[... previous app setup code until the tabs section ...]
+st.set_page_config(page_title="Legal Intake Dashboard", layout="wide")
+st.title("Legal Intake Dashboard")
 
-# Enhanced Tabs with All Features
-tab1, tab2, tab3, tab4 = st.tabs(["Overview", "Performance", "Analysis", "Insights"])
+rows_all = load_rows(CSV_PATH)
+
+# Sidebar filters
+st.sidebar.header("Filters")
+all_contract_types = unique_values(rows_all, "Contract Type")
+all_priorities = unique_values(rows_all, "Priority")
+all_statuses = unique_values(rows_all, "Status")
+all_counsels = unique_values(rows_all, "Assigned Counsel")
+
+dates = [r["Date Submitted Parsed"] for r in rows_all if r["Date Submitted Parsed"]]
+min_date = min(dates) if dates else date(2025, 1, 1)
+max_date = max(dates) if dates else date(2025, 12, 31)
+
+date_range = st.sidebar.date_input(
+    "Date range",
+    value=(min_date, max_date),
+    min_value=min_date,
+    max_value=max_date
+)
+
+contract_filter = st.sidebar.multiselect("Contract Type", options=all_contract_types, default=[])
+priority_filter = st.sidebar.multiselect("Priority", options=all_priorities, default=[])
+status_filter = st.sidebar.multiselect("Status", options=all_statuses, default=[])
+counsel_filter = st.sidebar.multiselect("Assigned Counsel", options=all_counsels, default=[])
+
+filters = {
+    "Contract Type": contract_filter,
+    "Priority": priority_filter,
+    "Status": status_filter,
+    "Assigned Counsel": counsel_filter
+}
+rows = filter_rows(rows_all, filters, date_range)
+
+# KPIs
+total, avg_turnaround, on_time_pct, most_common_ct = kpi_values(rows)
+c1, c2, c3, c4 = st.columns(4)
+c1.metric("Total Requests", f"{total}")
+c2.metric("Average Turnaround", f"{avg_turnaround:.1f} days")
+c3.metric("On-Time Completion", f"{on_time_pct:.0f}%")
+c4.metric("Most Common Contract", most_common_ct)
+
+# Tabs
+tab1, tab2, tab3 = st.tabs(["Overview", "Analysis", "Details"])
 
 with tab1:
     col1, col2 = st.columns(2)
@@ -141,38 +314,39 @@ with tab1:
     calendar_heatmap(rows)
 
 with tab2:
-    col1, col2 = st.columns(2)
-    with col1:
-        bar_chart_from_counter(Counter([r.get("Priority", "") for r in rows]), "Requests by Priority")
-    with col2:
-        histogram_turnaround([r["Turnaround Float"] for r in rows if r["Turnaround Float"] is not None], "Turnaround Time")
-    show_counsel_performance(rows)
-
-with tab3:
     show_priority_matrix(rows)
     show_document_complexity(rows)
-    
-    # Additional analysis
-    st.subheader("Status Transition Analysis")
-    status_changes = defaultdict(Counter)
-    for r in rows:
-        if "Previous Status" in r:  # Assuming your data tracks status changes
-            status_changes[r["Previous Status"]][r["Status"]] += 1
-    if status_changes:
-        st.write("How requests move between statuses:")
-        st.dataframe(status_changes)
 
-with tab4:
-    show_completion_rate_trend(rows)
-    show_upcoming_deadlines(rows)
-    
-    # Workload distribution
-    st.subheader("Workload Distribution")
-    status_counts = Counter([r.get("Status", "") for r in rows])
-    if status_counts:
-        fig, ax = plt.subplots()
-        ax.pie(status_counts.values(), labels=status_counts.keys(),
-              autopct='%1.1f%%', startangle=90, 
-              colors=plt.cm.Blues(np.linspace(0.3, 0.8, len(status_counts))))
-        ax.axis('equal')
-        st.pyplot(fig)
+with tab3:
+    st.subheader("Filtered Requests")
+    if rows:
+        cols = [
+            "Request ID", "Request Name", "Requester",
+            "Contract Type", "Priority", "Status",
+            "Assigned Counsel", "Date Submitted",
+            "Target Completion Date", "Actual Completion Date",
+            "Turnaround Time (Days)"
+        ]
+        display_rows = [{c: r.get(c, "") for c in cols} for r in rows]
+        st.dataframe(display_rows, use_container_width=True)
+
+        def to_csv_string(dict_rows, headers):
+            out = [",".join([f'"{h}"' for h in headers])]
+            for d in dict_rows:
+                row_vals = []
+                for h in headers:
+                    cell = d.get(h, "") or ""
+                    cell = cell.replace('"', '""')
+                    row_vals.append(f'"{cell}"')
+                out.append(",".join(row_vals))
+            return "\n".join(out)
+
+        csv_bytes = to_csv_string(display_rows, cols).encode("utf-8")
+        st.download_button(
+            "Download filtered CSV",
+            data=csv_bytes,
+            file_name="filtered_requests.csv",
+            mime="text/csv"
+        )
+    else:
+        st.info("No data in the selected filter range.")
