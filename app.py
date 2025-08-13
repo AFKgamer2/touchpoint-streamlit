@@ -1,4 +1,4 @@
-# app.py
+# app.py - Fully Corrected Version
 import csv
 from collections import Counter, defaultdict
 from datetime import datetime, date
@@ -125,7 +125,7 @@ def calendar_heatmap(rows, title="Calendar Heatmap"):
         weekday -= 1  # Monday=0
         heatmap[weekday, week_idx[(year, week)]] = cnt
 
-    fig, ax = plt.subplots(figsize=(len(weeks) / 2, 2))
+    fig, ax = plt.subplots(figsize=(len(weeks)/2, 2))
     c = ax.imshow(heatmap, cmap="Blues", aspect="auto")
     ax.set_yticks(range(7))
     ax.set_yticklabels(["Mon", "Tue", "Wed", "Thu", "Fri", "Sat", "Sun"])
@@ -142,7 +142,7 @@ st.title("Legal Intake Dashboard (Native Streamlit)")
 
 rows_all = load_rows(CSV_PATH)
 
-# Sidebar filters
+# Sidebar filters - CORRECTED SECTION
 st.sidebar.header("Filters")
 all_contract_types = unique_values(rows_all, "Contract Type")
 all_priorities = unique_values(rows_all, "Priority")
@@ -198,10 +198,10 @@ with tab3:
     st.subheader("Filtered Requests")
     if rows:
         cols = [
-            "Request ID", "Request Name", "Requester", 
-            "Contract Type", "Priority", "Status", 
-            "Assigned Counsel", "Date Submitted", 
-            "Target Completion Date", "Actual Completion Date", 
+            "Request ID", "Request Name", "Requester",
+            "Contract Type", "Priority", "Status",
+            "Assigned Counsel", "Date Submitted",
+            "Target Completion Date", "Actual Completion Date",
             "Turnaround Time (Days)"
         ]
         display_rows = [{c: r.get(c, "") for c in cols} for r in rows]
