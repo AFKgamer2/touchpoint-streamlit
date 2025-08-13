@@ -1,4 +1,4 @@
-# app.py - Complete Working Version with Fixed Priority Matrix
+# app.py - Complete Version with Heatmap at Top
 import csv
 from collections import Counter, defaultdict
 from datetime import datetime, date, timedelta
@@ -163,7 +163,7 @@ def calendar_heatmap(rows, title="Request Volume"):
     st.pyplot(fig, transparent=True)
 
 # ----------------------------
-# New Features (with fixed Priority Matrix)
+# New Features
 # ----------------------------
 def show_priority_matrix(rows):
     """Fixed Priority Matrix visualization"""
@@ -334,12 +334,15 @@ c4.metric("Most Common Contract", most_common_ct)
 tab1, tab2, tab3 = st.tabs(["Overview", "Analysis", "Details"])
 
 with tab1:
+    # Heatmap at the top
+    calendar_heatmap(rows)
+    
+    # Then the two-column charts below
     col1, col2 = st.columns(2)
     with col1:
         bar_chart_from_counter(Counter([r.get("Contract Type", "") for r in rows]), "Contracts by Type")
     with col2:
         line_chart_counts([r["Date Submitted Parsed"] for r in rows if r["Date Submitted Parsed"]], "Requests Over Time")
-    calendar_heatmap(rows)
 
 with tab2:
     show_priority_matrix(rows)
