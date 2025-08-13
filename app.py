@@ -1,4 +1,4 @@
-# app.py
+# app.py - Fully Corrected Version
 import csv
 from collections import Counter, defaultdict
 from datetime import datetime, date
@@ -125,7 +125,7 @@ def calendar_heatmap(rows, title="Calendar Heatmap"):
         weekday -= 1  # Monday=0
         heatmap[weekday, week_idx[(year, week)]] = cnt
 
-    fig, ax = plt.subplots(figsize=(len(weeks) / 2, 2))
+    fig, ax = plt.subplots(figsize=(len(weeks)/2, 2))
     c = ax.imshow(heatmap, cmap="Blues", aspect="auto")
     ax.set_yticks(range(7))
     ax.set_yticklabels(["Mon", "Tue", "Wed", "Thu", "Fri", "Sat", "Sun"])
@@ -142,7 +142,7 @@ st.title("Legal Intake Dashboard (Native Streamlit)")
 
 rows_all = load_rows(CSV_PATH)
 
-# Sidebar filters
+# Sidebar filters - CORRECTED SECTION
 st.sidebar.header("Filters")
 all_contract_types = unique_values(rows_all, "Contract Type")
 all_priorities = unique_values(rows_all, "Priority")
@@ -153,13 +153,24 @@ dates = [r["Date Submitted Parsed"] for r in rows_all if r["Date Submitted Parse
 min_date = min(dates) if dates else date(2025, 1, 1)
 max_date = max(dates) if dates else date(2025, 12, 31)
 
-date_range = st.sidebar.date_input("Date range", value=(min_date, max_date), min_value=min_date, max_value=max_date)
+date_range = st.sidebar.date_input(
+    "Date range",
+    value=(min_date, max_date),
+    min_value=min_date,
+    max_value=max_date
+)
+
 contract_filter = st.sidebar.multiselect("Contract Type", options=all_contract_types, default=[])
 priority_filter = st.sidebar.multiselect("Priority", options=all_priorities, default=[])
 status_filter = st.sidebar.multiselect("Status", options=all_statuses, default=[])
 counsel_filter = st.sidebar.multiselect("Assigned Counsel", options=all_counsels, default=[])
 
-filters = {"Contract Type": contract_filter, "Priority": priority_filter, "Status": status_filter, "Assigned Counsel": counsel_filter}
+filters = {
+    "Contract Type": contract_filter,
+    "Priority": priority_filter,
+    "Status": status_filter,
+    "Assigned Counsel": counsel_filter
+}
 rows = filter_rows(rows_all, filters, date_range)
 
 # KPIs
@@ -186,8 +197,13 @@ with tab2:
 with tab3:
     st.subheader("Filtered Requests")
     if rows:
-        cols = ["Request ID", "Request Name", "Requester", "Contract Type", "Priority", "Status", "Assigned Counsel",
-                "Date Submitted", "Target Completion Date", "Actual Completion Date", "Turnaround Time (Days)"]
+        cols = [
+            "Request ID", "Request Name", "Requester",
+            "Contract Type", "Priority", "Status",
+            "Assigned Counsel", "Date Submitted",
+            "Target Completion Date", "Actual Completion Date",
+            "Turnaround Time (Days)"
+        ]
         display_rows = [{c: r.get(c, "") for c in cols} for r in rows]
         st.dataframe(display_rows, use_container_width=True)
 
@@ -203,6 +219,11 @@ with tab3:
             return "\n".join(out)
 
         csv_bytes = to_csv_string(display_rows, cols).encode("utf-8")
-        st.download_button("Download filtered CSV", data=csv_bytes, file_name="filtered_requests.csv", mime="text/csv")
+        st.download_button(
+            "Download filtered CSV",
+            data=csv_bytes,
+            file_name="filtered_requests.csv",
+            mime="text/csv"
+        )
     else:
         st.info("No data in the selected filter range.")
