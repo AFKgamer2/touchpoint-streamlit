@@ -1,4 +1,4 @@
-# app.py - Fully Corrected Version
+# app.py - Fixed Version
 import csv
 from collections import Counter, defaultdict
 from datetime import datetime, date
@@ -9,7 +9,7 @@ import numpy as np
 CSV_PATH = "Touchpoint - Sheet1.csv"
 
 # ----------------------------
-# Utilities
+# Utilities (unchanged)
 # ----------------------------
 def parse_date(s):
     if not s or not isinstance(s, str):
@@ -64,7 +64,7 @@ def filter_rows(rows, filters, date_range):
     return out
 
 # ----------------------------
-# KPIs
+# KPIs (unchanged)
 # ----------------------------
 def kpi_values(rows):
     total = len(rows)
@@ -78,34 +78,43 @@ def kpi_values(rows):
     return total, avg_turnaround, on_time_pct, most_common_ct
 
 # ----------------------------
-# Charts (native)
+# Updated Charts (fixed for Streamlit API)
 # ----------------------------
 def bar_chart_from_counter(counter_dict, title):
-    labels, values = zip(*sorted(counter_dict.items(), key=lambda kv: (-kv[1], kv[0]))) if counter_dict else ([], [])
     st.subheader(title)
-    if labels:
-        st.bar_chart({"Count": list(values)}, x=list(labels))
+    if counter_dict:
+        # Convert to DataFrame format that Streamlit expects
+        chart_data = {"Category": list(counter_dict.keys()), 
+                     "Count": list(counter_dict.values())}
+        st.bar_chart(chart_data, x="Category", y="Count")
     else:
         st.info("No data to display.")
 
 def line_chart_counts(dates_list, title):
-    counts = Counter(dates_list)
-    sorted_dates = sorted(counts)
-    values = [counts[d] for d in sorted_dates]
     st.subheader(title)
-    if sorted_dates:
-        st.line_chart({"Count": values}, x=[d.isoformat() for d in sorted_dates])
+    if dates_list:
+        # Convert to value counts format
+        date_counts = Counter(dates_list)
+        chart_data = {"Date": [d.isoformat() for d in sorted(date_counts)],
+                     "Count": [date_counts[d] for d in sorted(date_counts)]}
+        st.line_chart(chart_data, x="Date", y="Count")
     else:
         st.info("No data to display.")
 
 def histogram_turnaround(values, title):
     st.subheader(title)
     if values:
-        fig, ax = plt.subplots()
-        ax.hist(values, bins=min(20, len(set(values))), color='skyblue', edgecolor='black')
-        ax.set_xlabel("Turnaround Time (Days)")
-        ax.set_ylabel("Frequency")
-        st.pyplot(fig)
+        # Simple binning without numpy
+        bins = [0, 3, 7, 14, 30]
+        hist = [0] * (len(bins)-1)
+        labels = []
+        for v in values:
+            for i in range(len(bins)-1):
+                if bins[i] <= v < bins[i+1]:
+                    hist[i] += 1
+        chart_data = {"Range": [f"{bins[i]}-{bins[i+1]} days" for i in range(len(hist))],
+                     "Count": hist}
+        st.bar_chart(chart_data, x="Range", y="Count")
     else:
         st.info("No turnaround time data.")
 
@@ -135,14 +144,14 @@ def calendar_heatmap(rows, title="Calendar Heatmap"):
     st.pyplot(fig)
 
 # ----------------------------
-# App
+# App (updated with fixed chart calls)
 # ----------------------------
 st.set_page_config(page_title="Legal Intake Dashboard", layout="wide")
-st.title("Legal Intake Dashboard (Native Streamlit)")
+st.title("Legal Intake Dashboard")
 
 rows_all = load_rows(CSV_PATH)
 
-# Sidebar filters - CORRECTED SECTION
+# Sidebar filters
 st.sidebar.header("Filters")
 all_contract_types = unique_values(rows_all, "Contract Type")
 all_priorities = unique_values(rows_all, "Priority")
