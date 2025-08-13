@@ -1,4 +1,4 @@
-# app.py - Fixed Version
+# app.py - Complete Version with Styled Heatmap
 import csv
 from collections import Counter, defaultdict
 from datetime import datetime, date
@@ -9,7 +9,7 @@ import numpy as np
 CSV_PATH = "Touchpoint - Sheet1.csv"
 
 # ----------------------------
-# Utilities (unchanged)
+# Utilities
 # ----------------------------
 def parse_date(s):
     if not s or not isinstance(s, str):
@@ -64,7 +64,7 @@ def filter_rows(rows, filters, date_range):
     return out
 
 # ----------------------------
-# KPIs (unchanged)
+# KPIs
 # ----------------------------
 def kpi_values(rows):
     total = len(rows)
@@ -78,12 +78,11 @@ def kpi_values(rows):
     return total, avg_turnaround, on_time_pct, most_common_ct
 
 # ----------------------------
-# Updated Charts (fixed for Streamlit API)
+# Charts
 # ----------------------------
 def bar_chart_from_counter(counter_dict, title):
     st.subheader(title)
     if counter_dict:
-        # Convert to DataFrame format that Streamlit expects
         chart_data = {"Category": list(counter_dict.keys()), 
                      "Count": list(counter_dict.values())}
         st.bar_chart(chart_data, x="Category", y="Count")
@@ -93,7 +92,6 @@ def bar_chart_from_counter(counter_dict, title):
 def line_chart_counts(dates_list, title):
     st.subheader(title)
     if dates_list:
-        # Convert to value counts format
         date_counts = Counter(dates_list)
         chart_data = {"Date": [d.isoformat() for d in sorted(date_counts)],
                      "Count": [date_counts[d] for d in sorted(date_counts)]}
@@ -104,10 +102,8 @@ def line_chart_counts(dates_list, title):
 def histogram_turnaround(values, title):
     st.subheader(title)
     if values:
-        # Simple binning without numpy
         bins = [0, 3, 7, 14, 30]
         hist = [0] * (len(bins)-1)
-        labels = []
         for v in values:
             for i in range(len(bins)-1):
                 if bins[i] <= v < bins[i+1]:
@@ -118,33 +114,63 @@ def histogram_turnaround(values, title):
     else:
         st.info("No turnaround time data.")
 
-def calendar_heatmap(rows, title="Calendar Heatmap"):
+def calendar_heatmap(rows, title="Request Volume"):
     st.subheader(title)
     counts = Counter([r["Date Submitted Parsed"] for r in rows if r["Date Submitted Parsed"]])
     if not counts:
         st.info("No data for heatmap.")
         return
 
-    weeks = sorted({d.isocalendar()[:2] for d in counts})
-    week_idx = {w: i for i, w in enumerate(weeks)}
-    heatmap = np.zeros((7, len(weeks)))
-
+    # Get all dates in the range
+    dates = sorted(counts.keys())
+    min_date = min(dates)
+    max_date = max(dates)
+    
+    # Create matrix (weeks x days)
+    num_weeks = (max_date - min_date).days // 7 + 2
+    heatmap = np.zeros((7, num_weeks))
+    
+    # Fill matrix
     for d, cnt in counts.items():
-        year, week, weekday = d.isocalendar()
-        weekday -= 1  # Monday=0
-        heatmap[weekday, week_idx[(year, week)]] = cnt
-
-    fig, ax = plt.subplots(figsize=(len(weeks)/2, 2))
-    c = ax.imshow(heatmap, cmap="Blues", aspect="auto")
+        week_num = (d - min_date).days // 7
+        day_of_week = d.weekday()  # Monday=0
+        heatmap[day_of_week, week_num] = cnt
+    
+    # Create plot with Streamlit style
+    fig, ax = plt.subplots(figsize=(max(8, num_weeks*0.6), 2.2))
+    plt.style.use('default')
+    
+    # Blue gradient matching Streamlit theme
+    cmap = plt.cm.Blues
+    cmap.set_bad(color='#f0f2f6')  # Light gray for empty
+    
+    # Plot with clean styling
+    c = ax.imshow(heatmap, cmap=cmap, aspect='auto', 
+                 interpolation='none', vmin=0, vmax=max(1, max(counts.values())))
+    
+    # Customize appearance
+    ax.set_xticks([])
     ax.set_yticks(range(7))
     ax.set_yticklabels(["Mon", "Tue", "Wed", "Thu", "Fri", "Sat", "Sun"])
-    ax.set_xticks(range(len(weeks)))
-    ax.set_xticklabels([f"{y}-W{w}" for y, w in weeks], rotation=90, fontsize=8)
-    fig.colorbar(c, ax=ax, orientation="vertical", label="Requests")
+    ax.tick_params(axis='y', colors='#31333F', labelsize=9)  # Dark gray text
+    
+    # Remove spines and add subtle grid
+    for spine in ax.spines.values():
+        spine.set_visible(False)
+    ax.grid(which='both', color='white', linestyle='-', linewidth=0.8)
+    ax.set_axisbelow(True)
+    
+    # Add minimal colorbar
+    cbar = fig.colorbar(c, ax=ax, orientation='horizontal', pad=0.08)
+    cbar.outline.set_visible(False)
+    cbar.ax.tick_params(colors='#31333F', labelsize=8)
+    cbar.set_label('Requests', color='#31333F', fontsize=9)
+    
+    plt.tight_layout()
     st.pyplot(fig)
 
 # ----------------------------
-# App (updated with fixed chart calls)
+# App
 # ----------------------------
 st.set_page_config(page_title="Legal Intake Dashboard", layout="wide")
 st.title("Legal Intake Dashboard")
@@ -196,7 +222,7 @@ tab1, tab2, tab3 = st.tabs(["Overview", "Performance", "Details"])
 with tab1:
     bar_chart_from_counter(Counter([r.get("Contract Type", "") for r in rows]), "Most Common Contract Types")
     line_chart_counts([r["Date Submitted Parsed"] for r in rows if r["Date Submitted Parsed"]], "Requests Over Time")
-    calendar_heatmap(rows, "Request Volume by Weekday & Week")
+    calendar_heatmap(rows)
 
 with tab2:
     bar_chart_from_counter(Counter([r.get("Priority", "") for r in rows]), "Requests by Priority")
